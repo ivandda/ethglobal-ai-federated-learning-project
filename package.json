@@ -11,7 +11,9 @@
   "license": "ISC",
   "packageManager": "pnpm@10.12.4",
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.3",
     "@types/node": "^22.19.1",
+    "ethers": "^6.15.0",
     "hardhat": "^3.0.15",
     "typescript": "~5.8.3"
   },
