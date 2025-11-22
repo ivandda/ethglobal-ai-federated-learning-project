@@ -1,16 +1,18 @@
 {
-  "timestamp": 1763835596,
+  "timestamp": 1763840221,
   "num_server_rounds": 3,
   "global_metrics": {},
   "rounds": [],
   "storage": {
     "backend": "0g",
-    "zero_g_root": "0xce1e9d7729e39b2fd51ca6d8f76411859779da0f7ac9c8c189b8672e74bf31e6",
+    "zero_g_root": "0x02e997d3a84035c28b9a94c454a47d2f3d1cc5d8707c24c7fb9f969f82b4718b",
     "zero_g_indexer": "https://indexer-storage-testnet-turbo.0g.ai/"
   },
   "chain": {
     "rpc_url": "https://evmrpc-testnet.0g.ai",
     "contract_address": "0xd29bf5038Abb3f250F1950ef3d02828d908A5998",
-    "last_round_id": 7
-  }
+    "last_round_id": 8
+  },
+  "summary_data_root": "0x9661e3333d232657d144210cce804c58096717177ed8c23a65d4af7d9dce5e40",
+  "summary_data_filename": "run_summary_data.json"
 }

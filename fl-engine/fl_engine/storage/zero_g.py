@@ -1,6 +1,7 @@
 import os
 import subprocess
 import re
+import requests
 from .base import DecentralizedStorage
 
 class ZeroGStorage(DecentralizedStorage):
@@ -48,3 +49,15 @@ class ZeroGStorage(DecentralizedStorage):
         root_hash = m.group(1)
         print(f"[0g] Uploaded {path}, root hash = {root_hash}")
         return root_hash
+
+    def download(self, root_hash: str, filename: str) -> bytes:
+        """Download a file from 0G storage using the indexer HTTP API."""
+        indexer = self.indexer.rstrip("/")
+        url = f"{indexer}/file?root={root_hash}&name={filename}"
+        
+        print(f"[0g] Downloading {filename} from root {root_hash}...")
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        print(f"[0g] Downloaded {filename}, size = {len(response.content)} bytes")
+        return response.content

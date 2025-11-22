@@ -110,9 +110,33 @@ def write_run_summary(
         },
     }
 
+    # Write local file first
     out_path = Path("run_summary.json")
-    out_path.write_text(json.dumps(summary, indent=2))
+    summary_json_str = json.dumps(summary, indent=2)
+    out_path.write_text(summary_json_str)
     print(f"[summary] Wrote {out_path} for LLM helper")
+
+    # Upload summary data to 0G storage
+    try:
+        storage = get_storage_backend()
+        # Write summary to a temporary file for upload
+        temp_summary_path = Path("run_summary_data.json")
+        temp_summary_path.write_text(summary_json_str)
+        
+        summary_root = storage.upload(str(temp_summary_path))
+        
+        # Update local run_summary.json with the root hash of the data
+        summary["summary_data_root"] = summary_root
+        summary["summary_data_filename"] = "run_summary_data.json"
+        out_path.write_text(json.dumps(summary, indent=2))
+        
+        # Clean up temp file
+        temp_summary_path.unlink()
+        
+        print(f"[summary] Uploaded summary data to 0G, root = {summary_root}")
+    except Exception as e:
+        print(f"[summary] Warning: Failed to upload summary to 0G: {e}")
+        print("[summary] LLM helper will use local file only")
 
 
 @app.main()

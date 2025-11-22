@@ -23,16 +23,49 @@ async function main() {
     process.exit(1);
   }
 
-  // 1) Load the run summary
+  // 1) Load the run summary metadata
   const summaryPath = path.join(__dirname, "..", "fl-engine", "run_summary.json");
   if (!fs.existsSync(summaryPath)) {
     console.error("run_summary.json not found. Run `flwr run .` first.");
     console.error(`Looking for: ${summaryPath}`);
     process.exit(1);
   }
-  const summaryJson = fs.readFileSync(summaryPath, "utf-8");
+  const summaryMetadata = JSON.parse(fs.readFileSync(summaryPath, "utf-8"));
 
-  // 2) Create broker
+  // 2) Try to download summary data from 0G storage if available
+  let summaryJson;
+  if (summaryMetadata.summary_data_root && summaryMetadata.summary_data_filename) {
+    try {
+      const indexer = summaryMetadata.storage?.zero_g_indexer || 
+                     process.env.ZEROG_INDEXER || 
+                     "https://indexer-storage-testnet-turbo.0g.ai/";
+      const indexerUrl = indexer.endsWith("/") ? indexer.slice(0, -1) : indexer;
+      const downloadUrl = `${indexerUrl}/file?root=${summaryMetadata.summary_data_root}&name=${summaryMetadata.summary_data_filename}`;
+      
+      console.log(`Downloading summary data from 0G storage...`);
+      console.log(`Root: ${summaryMetadata.summary_data_root}`);
+      console.log(`Filename: ${summaryMetadata.summary_data_filename}`);
+      
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download from 0G: ${response.status} ${response.statusText}`);
+      }
+      
+      summaryJson = await response.text();
+      console.log(`Successfully downloaded ${summaryJson.length} bytes from 0G storage`);
+    } catch (err) {
+      console.warn(`Failed to download from 0G storage: ${err.message}`);
+      console.warn(`Falling back to local file...`);
+      // Fall back to using the local file content
+      summaryJson = JSON.stringify(summaryMetadata, null, 2);
+    }
+  } else {
+    // No 0G storage data, use local file
+    console.log("No 0G storage data found, using local file");
+    summaryJson = JSON.stringify(summaryMetadata, null, 2);
+  }
+
+  // 3) Create broker
   console.log("Creating broker...");
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const wallet = new ethers.Wallet(privateKey, provider);
@@ -40,20 +73,20 @@ async function main() {
   const broker = await createZGComputeNetworkBroker(wallet);
   console.log("Broker created successfully");
 
-  // 3) Pick a provider/model
+  // 4) Pick a provider/model
   const providerAddress = "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3";
 
   console.log("Acknowledging provider...");
   await broker.inference.acknowledgeProviderSigner(providerAddress);
 
-  // 4) Get service metadata
+  // 5) Get service metadata
   console.log("Getting service metadata...");
   const { endpoint, model } = await broker.inference.getServiceMetadata(
     providerAddress
   );
   console.log(`Using endpoint: ${endpoint}, model: ${model}`);
 
-  // 5) Build the prompt from summary + question
+  // 6) Build the prompt from summary + question
   const systemPrompt = `
 You are an assistant helping interpret a federated learning run.
 You will be given a JSON summary of the last run and a user question.
@@ -73,14 +106,14 @@ isn't in the data, say so explicitly.
     },
   ];
 
-  // 6) Get request headers for this single request
+  // 7) Get request headers for this single request
   console.log("Getting request headers...");
   const headers = await broker.inference.getRequestHeaders(
     providerAddress,
     JSON.stringify(messages)
   );
 
-  // 7) Call the 0G LLM endpoint
+  // 8) Call the 0G LLM endpoint
   console.log("Calling LLM endpoint...");
   const response = await fetch(`${endpoint}/chat/completions`, {
     method: "POST",
@@ -105,7 +138,7 @@ isn't in the data, say so explicitly.
   console.log(answer);
   console.log("\n==================\n");
 
-  // 8) Optional: verify response
+  // 9) Optional: verify response
   try {
     const isValid = await broker.inference.processResponse(
       providerAddress,
