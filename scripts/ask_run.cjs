@@ -90,6 +90,24 @@ async function main() {
   const systemPrompt = `
 You are an assistant helping interpret a federated learning run.
 You will be given a JSON summary of the last run and a user question.
+
+The summary includes:
+- Dataset information (name, type, classes)
+- Model architecture details
+- Training configuration (learning rate, epochs, etc.)
+- Round-by-round metrics showing:
+  * Training loss per round
+  * Evaluation accuracy per round
+  * Accuracy improvement between rounds
+  * Client participation and contributions
+- Overall model improvement metrics
+
+When analyzing the data:
+1. Explain how the model improved over rounds (accuracy trends)
+2. Describe client contributions (number of samples, participation)
+3. Highlight key metrics and improvements
+4. Use the round-by-round data to show progression
+
 Use ONLY the provided JSON and general ML knowledge. If something
 isn't in the data, say so explicitly.
 `;
