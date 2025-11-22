@@ -20,3 +20,8 @@ class FilecoinPinStorage(DecentralizedStorage):
             raise RuntimeError("Could not find Root CID in filecoin-pin output")
 
         return m.group(1)
+
+    def download(self, root_hash: str, filename: str) -> bytes:
+        """Download a file from Filecoin storage."""
+        # TODO: Implement Filecoin download if needed
+        raise NotImplementedError("Filecoin download not yet implemented")
