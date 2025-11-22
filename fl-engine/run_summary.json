@@ -1,0 +1,16 @@
+{
+  "timestamp": 1763835596,
+  "num_server_rounds": 3,
+  "global_metrics": {},
+  "rounds": [],
+  "storage": {
+    "backend": "0g",
+    "zero_g_root": "0xce1e9d7729e39b2fd51ca6d8f76411859779da0f7ac9c8c189b8672e74bf31e6",
+    "zero_g_indexer": "https://indexer-storage-testnet-turbo.0g.ai/"
+  },
+  "chain": {
+    "rpc_url": "https://evmrpc-testnet.0g.ai",
+    "contract_address": "0xd29bf5038Abb3f250F1950ef3d02828d908A5998",
+    "last_round_id": 7
+  }
+}

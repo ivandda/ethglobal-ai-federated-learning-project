@@ -1,8 +1,7 @@
-import subprocess
-import re
 import hashlib
 import json
 import os
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -17,13 +16,11 @@ from flwr.serverapp.strategy import FedAvg
 from .task import Net
 from .onchain_logger import OnchainFLLogger
 
-
 # Load environment variables from .env file
 env_path = Path(__file__).parent.parent / ".env"
 if not env_path.exists():
     env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(env_path)
-
 
 app = ServerApp()
 
@@ -36,8 +33,12 @@ def hash_arrays(arrays: ArrayRecord) -> bytes:
     return m.digest()
 
 
-def print_verification_summary(chain_env: str, rpc_url: str,
-                               contract_address: str, storage_root: str | None):
+def print_verification_summary(
+    chain_env: str,
+    rpc_url: str,
+    contract_address: str,
+    storage_root: str | None,
+) -> None:
     """Human-friendly validation instructions after training."""
 
     print("\n========== FEDERATED LEARNING VERIFICATION SUMMARY ==========\n")
@@ -61,7 +62,10 @@ def print_verification_summary(chain_env: str, rpc_url: str,
 
     # ---- Storage links ----
     if storage_root:
-        indexer = os.getenv("ZEROG_INDEXER", "https://indexer-storage-testnet-turbo.0g.ai").rstrip("/")
+        indexer = os.getenv(
+            "ZEROG_INDEXER",
+            "https://indexer-storage-testnet-turbo.0g.ai",
+        ).rstrip("/")
 
         print("\n📦 0G Storage Verification:")
         print(f"  - Root Hash: {storage_root}")
@@ -70,12 +74,45 @@ def print_verification_summary(chain_env: str, rpc_url: str,
         print(f"    {indexer}/file?root={storage_root}&name=final_model.pt")
 
         print("\n🔧 CLI Restore Command:")
-        print(f"    0g-storage-client download \\")
+        print("    0g-storage-client download \\")
         print(f"      --indexer {indexer}/ \\")
         print(f"      --root {storage_root} \\")
-        print(f"      --file restored_final_model.pt --proof")
+        print("      --file restored_final_model.pt --proof")
 
     print("\n==============================================================\n")
+
+
+def write_run_summary(
+    result,
+    artifact_id: str | None,
+    rpc_url: str,
+    contract_address: str,
+    last_round_id: int,
+    num_server_rounds: int,
+) -> None:
+    """Dump a machine-readable summary for the LLM helper."""
+    summary = {
+        "timestamp": int(time.time()),
+        "num_server_rounds": num_server_rounds,
+        "global_metrics": {
+            # TODO: fill with whatever metrics you want later
+        },
+        "rounds": [],
+        "storage": {
+            "backend": os.getenv("STORAGE_BACKEND", "unknown"),
+            "zero_g_root": artifact_id,
+            "zero_g_indexer": os.getenv("ZEROG_INDEXER"),
+        },
+        "chain": {
+            "rpc_url": rpc_url,
+            "contract_address": contract_address,
+            "last_round_id": last_round_id,
+        },
+    }
+
+    out_path = Path("run_summary.json")
+    out_path.write_text(json.dumps(summary, indent=2))
+    print(f"[summary] Wrote {out_path} for LLM helper")
 
 
 @app.main()
@@ -83,9 +120,9 @@ def main(grid: Grid, context: Context) -> None:
     """Main entry point for the ServerApp."""
 
     # 1. FL config
-    fraction_train = context.run_config["fraction-train"]
-    num_rounds = context.run_config["num-server-rounds"]
-    lr = context.run_config["lr"]
+    fraction_train: float = context.run_config["fraction-train"]
+    num_rounds: int = context.run_config["num-server-rounds"]
+    lr: float = context.run_config["lr"]
 
     # 2. Model
     arrays = ArrayRecord(Net().state_dict())
@@ -106,7 +143,7 @@ def main(grid: Grid, context: Context) -> None:
     model_path = "final_model.pt"
     torch.save(result.arrays.to_torch_state_dict(), model_path)
 
-    # 6. Upload ONCE to selected backend (0G / filecoin / dummy)
+    # 6. Upload once to selected backend (0G / filecoin / dummy)
     storage = get_storage_backend()
     try:
         storage_root = storage.upload(model_path)
@@ -127,10 +164,13 @@ def main(grid: Grid, context: Context) -> None:
         with open(artifact_path, "r") as f:
             abi = json.load(f)["abi"]
 
-        rpc_url = os.getenv("RPC_URL")
+        rpc_url = os.getenv("RPC_URL", "http://127.0.0.1:8545")
         contract_address = os.getenv("CONTRACT_ADDRESS")
         owner_pk = os.getenv("OWNER_PRIVATE_KEY")
         server_pk = os.getenv("SERVER_PRIVATE_KEY")
+
+        if not contract_address:
+            raise RuntimeError("CONTRACT_ADDRESS missing in environment")
 
         logger = OnchainFLLogger(
             rpc_url=rpc_url,
@@ -155,13 +195,23 @@ def main(grid: Grid, context: Context) -> None:
             scores=[1000000],
         )
 
-        # 8. Show verification summary
+        # 8. Human-readable verification summary
         chain_env = os.getenv("CHAIN_ENV", "unknown")
         print_verification_summary(
             chain_env=chain_env,
             rpc_url=rpc_url,
             contract_address=contract_address,
             storage_root=storage_root,
+        )
+
+        # 9. Machine-readable summary for the 0G LLM helper
+        write_run_summary(
+            result=result,
+            artifact_id=storage_root,
+            rpc_url=rpc_url,
+            contract_address=contract_address,
+            last_round_id=next_round,
+            num_server_rounds=num_rounds,
         )
 
     except Exception as e:
