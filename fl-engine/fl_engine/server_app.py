@@ -37,6 +37,60 @@ def hash_arrays(arrays: ArrayRecord) -> bytes:
     return m.digest()  # 32 bytes, for bytes32 in Solidity
 
 
+def print_verification_summary(
+    chain_env: str,
+    rpc_url: str,
+    contract_address: str,
+    storage_root: str | None,
+) -> None:
+    """Print human-friendly verification hints for 0G / local modes."""
+
+    print("\n=== Verification Summary ===")
+
+    # 1) Contract / explorer
+    contract_address = contract_address.strip()
+    print(f"- Contract address: {contract_address}")
+
+    explorer_base = None
+    # Very simple detection based on RPC URL
+    if "evmrpc-testnet.0g.ai" in rpc_url:
+        explorer_base = "https://chainscan-galileo.0g.ai"
+    elif "evmrpc.0g.ai" in rpc_url:
+        explorer_base = "https://chainscan.0g.ai"
+
+    if explorer_base:
+        print(f"- 0G explorer (address): {explorer_base}/address/{contract_address}")
+        print(
+            f"- Transactions tab:      {explorer_base}/address/{contract_address}?tab=transaction"
+        )
+    else:
+        print("- No public explorer configured (probably local Hardhat).")
+        print("  Use `pnpm hardhat node` logs or a local block explorer to inspect txs.")
+
+    # 2) Storage verification
+    if storage_root:
+        print(f"- 0G storage root: {storage_root}")
+        indexer = os.getenv(
+            "ZEROG_INDEXER", "https://indexer-storage-testnet-turbo.0g.ai/"
+        )
+        print("- To verify/download from 0G storage:")
+        print(
+            f"    0g-storage-client download \\"
+        )
+        print(
+            f"      --indexer {indexer} \\"
+        )
+        print(
+            f"      --root {storage_root} \\"
+        )
+        print(
+            f"      --file restored_final_model.pt --proof"
+        )
+
+    print("=== End of Summary ===\n")
+
+
+
 @app.main()
 def main(grid: Grid, context: Context) -> None:
     """Main entry point for the ServerApp."""
@@ -69,6 +123,11 @@ def main(grid: Grid, context: Context) -> None:
 
     # --- 6) Upload model to Filecoin (with graceful fallback) ---
     storage = get_storage_backend()
+    artifact_id = None
+    try:
+        artifact_id = storage.upload(model_path)
+    except Exception as e:
+        print(f"[storage ERROR] {e}")
 
     try:
         artifact_cid = storage.upload(model_path)
@@ -143,6 +202,17 @@ def main(grid: Grid, context: Context) -> None:
             client_addresses=[placeholder_client],
             samples=[100],      # Placeholder
             scores=[1000000],   # Placeholder
+        )
+
+        # --- 8) Print verification summary ---
+        chain_env = os.getenv("CHAIN_ENV", "unknown")
+        rpc_url = os.getenv("RPC_URL", "")
+        contract_address = os.getenv("CONTRACT_ADDRESS", "")
+        print_verification_summary(
+            chain_env=chain_env,
+            rpc_url=rpc_url,
+            contract_address=contract_address,
+            storage_root=artifact_id,
         )
 
     except Exception as e:
