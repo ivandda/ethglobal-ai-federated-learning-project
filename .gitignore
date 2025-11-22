@@ -1,3 +1,5 @@
+.env.0g
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
