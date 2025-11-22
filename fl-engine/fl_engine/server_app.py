@@ -52,7 +52,6 @@ def print_verification_summary(
     print(f"- Contract address: {contract_address}")
 
     explorer_base = None
-    # Very simple detection based on RPC URL
     if "evmrpc-testnet.0g.ai" in rpc_url:
         explorer_base = "https://chainscan-galileo.0g.ai"
     elif "evmrpc.0g.ai" in rpc_url:
@@ -65,27 +64,25 @@ def print_verification_summary(
         )
     else:
         print("- No public explorer configured (probably local Hardhat).")
-        print("  Use `pnpm hardhat node` logs or a local block explorer to inspect txs.")
 
-    # 2) Storage verification
+    # 2) Storage verification + HTTP download
     if storage_root:
         print(f"- 0G storage root: {storage_root}")
         indexer = os.getenv(
             "ZEROG_INDEXER", "https://indexer-storage-testnet-turbo.0g.ai/"
-        )
-        print("- To verify/download from 0G storage:")
-        print(
-            f"    0g-storage-client download \\"
-        )
-        print(
-            f"      --indexer {indexer} \\"
-        )
-        print(
-            f"      --root {storage_root} \\"
-        )
-        print(
-            f"      --file restored_final_model.pt --proof"
-        )
+        ).rstrip("/")
+
+        # CLI verification
+        print("- To verify/download from 0G storage via CLI:")
+        print(f"    0g-storage-client download \\")
+        print(f"      --indexer {indexer}/ \\")
+        print(f"      --root {storage_root} \\")
+        print(f"      --file restored_final_model.pt --proof")
+
+        # HTTP gateway link
+        http_url = f"{indexer}/file?root={storage_root}&name=final_model.pt"
+        print("- Direct HTTP download URL:")
+        print(f"    {http_url}")
 
     print("=== End of Summary ===\n")
 
