@@ -74,8 +74,9 @@ async function main() {
   console.log("Broker created successfully");
 
   // 4) Pick a provider/model
-  const providerAddress = "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3";
+  const providerAddress = process.env.ZG_PROVIDER_ADDRESS || "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3";
 
+  console.log(`Using provider address: ${providerAddress}`);
   console.log("Acknowledging provider...");
   await broker.inference.acknowledgeProviderSigner(providerAddress);
 
