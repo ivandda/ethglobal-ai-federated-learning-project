@@ -592,13 +592,43 @@ def main(grid: Grid, context: Context) -> None:
         server_addr = logger.server.address
         logger.ensure_client_registered(server_addr)
 
+        # Calculate actual client contributions from collected metrics
+        # Note: _round_metrics is already declared as global at the top of main()
+        total_samples = 0
+        total_contribution_score = 0
+        
+        # Sum samples and calculate contribution scores from all rounds
+        for round_metrics in _round_metrics:
+            if "clients" in round_metrics:
+                for client_data in round_metrics["clients"]:
+                    client_samples = client_data.get("samples", 0)
+                    total_samples += client_samples
+                    
+                    # Calculate contribution score based on samples and training quality
+                    # Score = samples * (1 + accuracy_improvement_factor)
+                    # For now, use samples as base score, can be enhanced with accuracy metrics
+                    train_loss = client_data.get("train_loss", 0.0)
+                    # Lower loss = better contribution, so invert it (use 1/loss or similar)
+                    # To avoid division by zero, use: score = samples * max(1, 10 - loss)
+                    loss_factor = max(1.0, 10.0 - train_loss) if train_loss > 0 else 1.0
+                    contribution_score = int(client_samples * loss_factor)
+                    total_contribution_score += contribution_score
+        
+        # Fallback if no metrics collected (shouldn't happen, but safety check)
+        if total_samples == 0:
+            print("[on-chain WARNING] No client metrics found, using fallback values")
+            total_samples = 100
+            total_contribution_score = 100000
+        
+        print(f"[on-chain] Recording round with {total_samples} total samples, score: {total_contribution_score}")
+
         logger.record_round(
             round_id=next_round,
             model_hash=model_hash,
             artifact_cid=storage_root or "NO-STORAGE",
             client_addresses=[server_addr],
-            samples=[100],
-            scores=[1000000],
+            samples=[total_samples],
+            scores=[total_contribution_score],
         )
 
         # 8. Human-readable verification summary

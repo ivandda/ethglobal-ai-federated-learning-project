@@ -1,18 +1,102 @@
 {
-  "timestamp": 1763840221,
+  "timestamp": 1763850838,
   "num_server_rounds": 3,
-  "global_metrics": {},
-  "rounds": [],
+  "dataset": {
+    "name": "CIFAR-10",
+    "type": "image_classification",
+    "num_classes": 10,
+    "classes": [
+      "airplane",
+      "automobile",
+      "bird",
+      "cat",
+      "deer",
+      "dog",
+      "frog",
+      "horse",
+      "ship",
+      "truck"
+    ],
+    "description": "CIFAR-10 is a dataset of 60,000 32x32 color images in 10 classes, with 6,000 images per class",
+    "source": "uoft-cs/cifar10",
+    "partitioning": "IID (Independent and Identically Distributed)",
+    "image_size": "32x32x3 (RGB)"
+  },
+  "model": {
+    "architecture": "CNN",
+    "description": "Simple CNN with 2 convolutional layers and 3 fully connected layers",
+    "layers": [
+      "Conv2d(3, 6, kernel_size=5)",
+      "MaxPool2d(2, 2)",
+      "Conv2d(6, 16, kernel_size=5)",
+      "MaxPool2d(2, 2)",
+      "Linear(16*5*5, 120)",
+      "Linear(120, 84)",
+      "Linear(84, 10)"
+    ],
+    "input_size": "32x32x3 (RGB images)",
+    "output_size": 10,
+    "activation": "ReLU"
+  },
+  "training_config": {
+    "learning_rate": 0.01,
+    "local_epochs": 1,
+    "fraction_train": 0.5,
+    "batch_size": 32,
+    "optimizer": "Adam",
+    "loss_function": "CrossEntropyLoss",
+    "num_server_rounds": 3
+  },
+  "global_metrics": {
+    "accuracy_improvement": {
+      "initial_accuracy": 0.1017,
+      "final_accuracy": 0.24539999999999998,
+      "absolute_improvement": 0.1437,
+      "relative_improvement_pct": 141.29793510324484
+    },
+    "loss_reduction": {
+      "initial_loss": 2.1649749074935913,
+      "final_loss": 2.0025518283843997,
+      "absolute_reduction": 0.16242307910919163,
+      "relative_reduction_pct": 7.502307696361715
+    }
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "metrics": {
+        "train_loss": 2.1649749074935913,
+        "eval_loss": 2.3038900554180146,
+        "eval_acc": 0.1017
+      }
+    },
+    {
+      "round": 2,
+      "metrics": {
+        "train_loss": 2.098498940086365,
+        "eval_loss": 2.1052434127777815,
+        "eval_acc": 0.19460000000000002
+      }
+    },
+    {
+      "round": 3,
+      "metrics": {
+        "train_loss": 2.0025518283843997,
+        "eval_loss": 1.929340930655599,
+        "eval_acc": 0.24539999999999998
+      }
+    }
+  ],
   "storage": {
     "backend": "0g",
-    "zero_g_root": "0x02e997d3a84035c28b9a94c454a47d2f3d1cc5d8707c24c7fb9f969f82b4718b",
+    "zero_g_root": "0x6c7bf93f256bd01dca0cd9fd2d0b3aaf8c14bf24eae3a5fcb22589a2e2e942d8",
     "zero_g_indexer": "https://indexer-storage-testnet-turbo.0g.ai/"
   },
   "chain": {
     "rpc_url": "https://evmrpc-testnet.0g.ai",
     "contract_address": "0xd29bf5038Abb3f250F1950ef3d02828d908A5998",
-    "last_round_id": 8
+    "last_round_id": 18
   },
-  "summary_data_root": "0x9661e3333d232657d144210cce804c58096717177ed8c23a65d4af7d9dce5e40",
+  "summary_data_root": "0xdd9dc7a6030eda2a4a23b8511ab52cc5e7e213583cc648a2da642e45c633831c",
   "summary_data_filename": "run_summary_data.json"
 }
