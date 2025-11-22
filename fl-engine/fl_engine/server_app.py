@@ -8,12 +8,21 @@ from fl_engine.task import Net
 from typing import Any
 import hashlib
 import json
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 import torch
 
 from .task import Net
 from .onchain_logger import OnchainFLLogger
+
+# Load environment variables from .env file
+# Look for .env in fl-engine directory or parent directory
+env_path = Path(__file__).parent.parent / ".env"
+if not env_path.exists():
+    env_path = Path(__file__).parent.parent.parent / ".env"
+load_dotenv(env_path)
 
 
 # Create ServerApp
@@ -73,11 +82,25 @@ def main(grid: Grid, context: Context) -> None:
         else:
             raise FileNotFoundError(f"Contract artifact not found at {artifact_path}")
 
+        # Load configuration from environment variables
+        rpc_url = os.getenv("RPC_URL", "http://127.0.0.1:8545")
+        contract_address = os.getenv("CONTRACT_ADDRESS")
+        owner_private_key = os.getenv("OWNER_PRIVATE_KEY")
+        server_private_key = os.getenv("SERVER_PRIVATE_KEY")
+        
+        # Validate required environment variables
+        if not contract_address:
+            raise ValueError("CONTRACT_ADDRESS not found in environment variables. Please set it in .env file.")
+        if not owner_private_key:
+            raise ValueError("OWNER_PRIVATE_KEY not found in environment variables. Please set it in .env file.")
+        if not server_private_key:
+            raise ValueError("SERVER_PRIVATE_KEY not found in environment variables. Please set it in .env file.")
+        
         logger = OnchainFLLogger(
-            rpc_url="http://127.0.0.1:8545",
-            contract_address="0x5FbDB2315678afecb367f032d93F642f64180aa3",  # update from last deploy
-            owner_private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-            server_private_key="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+            rpc_url=rpc_url,
+            contract_address=contract_address,
+            owner_private_key=owner_private_key,
+            server_private_key=server_private_key,
             abi=FEDLEARN_LOG_ABI,
         )
 
