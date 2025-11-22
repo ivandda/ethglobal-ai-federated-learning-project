@@ -43,8 +43,8 @@ class OnchainFLLogger:
                     "from": self.owner.address,
                     "nonce": self.w3.eth.get_transaction_count(self.owner.address),
                     "gas": 100_000,
-                    "maxFeePerGas": self.w3.to_wei("2", "gwei"),
-                    "maxPriorityFeePerGas": self.w3.to_wei("1", "gwei"),
+                    "maxFeePerGas": self.w3.to_wei("4", "gwei"),
+                    "maxPriorityFeePerGas": self.w3.to_wei("2", "gwei"),
                 })
                 signed = self.owner.sign_transaction(tx)
                 raw_tx = getattr(signed, 'raw_transaction', None) or getattr(signed, 'rawTransaction', None)
@@ -118,8 +118,8 @@ class OnchainFLLogger:
                 "from": self.server.address,
                 "nonce": self.w3.eth.get_transaction_count(self.server.address),
                 "gas": 5_000_000,
-                "maxFeePerGas": self.w3.to_wei("2", "gwei"),
-                "maxPriorityFeePerGas": self.w3.to_wei("1", "gwei"),
+                "maxFeePerGas": self.w3.to_wei("4", "gwei"),
+                "maxPriorityFeePerGas": self.w3.to_wei("2", "gwei"),
             }
         )
         signed = self.server.sign_transaction(tx)

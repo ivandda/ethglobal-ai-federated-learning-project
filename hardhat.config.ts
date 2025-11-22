@@ -11,5 +11,10 @@ export default defineConfig({
       type: "http",
       url: "http://127.0.0.1:8545",
     },
+    "0g-testnet": {
+      type: "http",
+      url: "https://evmrpc-testnet.0g.ai",
+      accounts: process.env.PRIVATE_KEY_0G ? [process.env.PRIVATE_KEY_0G] : [],
+    },
   },
 });
