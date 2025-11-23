@@ -42,6 +42,7 @@ def print_verification_summary(
     rpc_url: str,
     contract_address: str,
     storage_root: str | None,
+    summary_root: str | None = None,
 ) -> None:
     """Human-friendly validation instructions after training."""
 
@@ -65,13 +66,13 @@ def print_verification_summary(
         print("\n(No block explorer URL — likely Hardhat localhost)")
 
     # ---- Storage links ----
-    if storage_root:
-        indexer = os.getenv(
-            "ZEROG_INDEXER",
-            "https://indexer-storage-testnet-turbo.0g.ai",
-        ).rstrip("/")
+    indexer = os.getenv(
+        "ZEROG_INDEXER",
+        "https://indexer-storage-testnet-turbo.0g.ai",
+    ).rstrip("/")
 
-        print("\n📦 0G Storage Verification:")
+    if storage_root:
+        print("\n📦 Model Storage (0G):")
         print(f"  - Root Hash: {storage_root}")
 
         print("\n🔽 Direct HTTP Download (browser-friendly):")
@@ -82,6 +83,22 @@ def print_verification_summary(
         print(f"      --indexer {indexer}/ \\")
         print(f"      --root {storage_root} \\")
         print("      --file restored_final_model.pt --proof")
+
+    if summary_root:
+        print("\n📊 Summary Storage (0G) - For LLM Queries:")
+        print(f"  - Root Hash: {summary_root}")
+
+        print("\n🔽 Direct HTTP Download (browser-friendly):")
+        print(f"    {indexer}/file?root={summary_root}&name=run_summary_data.json")
+
+        print("\n🔧 CLI Restore Command:")
+        print("    0g-storage-client download \\")
+        print(f"      --indexer {indexer}/ \\")
+        print(f"      --root {summary_root} \\")
+        print("      --file run_summary_data.json --proof")
+
+        print("\n💡 Use for LLM queries:")
+        print(f"    STORAGE_ROOT={summary_root} pnpm ask-run \"your question\"")
 
     print("\n==============================================================\n")
 
@@ -549,13 +566,36 @@ def main(grid: Grid, context: Context) -> None:
     model_path = "final_model.pt"
     torch.save(result.arrays.to_torch_state_dict(), model_path)
 
-    # 6. Upload once to selected backend (0G / filecoin / dummy)
+    # 6. Upload model to selected backend (0G / filecoin / dummy)
     storage = get_storage_backend()
     try:
         storage_root = storage.upload(model_path)
     except Exception as e:
         print(f"[storage ERROR] {e}")
         storage_root = None
+
+    # 6.5. Generate and upload summary BEFORE on-chain logging (so we have summary_root)
+    summary_root = None
+    try:
+        # Generate summary first (this uploads it and returns the root)
+        write_run_summary(
+            result=result,
+            artifact_id=storage_root,
+            rpc_url=os.getenv("RPC_URL", "http://127.0.0.1:8545"),
+            contract_address=os.getenv("CONTRACT_ADDRESS", ""),
+            last_round_id=0,  # Will be set after logging
+            num_server_rounds=num_rounds,
+            context=context,
+        )
+        # Read back the summary root from the file
+        summary_metadata_path = Path("run_summary.json")
+        if summary_metadata_path.exists():
+            summary_metadata = json.loads(summary_metadata_path.read_text())
+            summary_root = summary_metadata.get("summary_data_root")
+            if summary_root:
+                print(f"[on-chain] Summary root available: {summary_root}")
+    except Exception as e:
+        print(f"[summary] Warning: Could not generate/upload summary before on-chain logging: {e}")
 
     # 7. On-chain logging
     try:
@@ -621,11 +661,13 @@ def main(grid: Grid, context: Context) -> None:
             total_contribution_score = 100000
         
         print(f"[on-chain] Recording round with {total_samples} total samples, score: {total_contribution_score}")
-
+        # summary_root is already available from step 6.5 above
+        
         logger.record_round(
             round_id=next_round,
             model_hash=model_hash,
             artifact_cid=storage_root or "NO-STORAGE",
+            summary_cid=summary_root or "",
             client_addresses=[server_addr],
             samples=[total_samples],
             scores=[total_contribution_score],
@@ -638,18 +680,18 @@ def main(grid: Grid, context: Context) -> None:
             rpc_url=rpc_url,
             contract_address=contract_address,
             storage_root=storage_root,
+            summary_root=summary_root,
         )
 
-        # 9. Machine-readable summary for the 0G LLM helper
-        write_run_summary(
-            result=result,
-            artifact_id=storage_root,
-            rpc_url=rpc_url,
-            contract_address=contract_address,
-            last_round_id=next_round,
-            num_server_rounds=num_rounds,
-            context=context,
-        )
+        # 9. Update summary with final round ID (summary was already generated in step 6.5)
+        try:
+            summary_metadata_path = Path("run_summary.json")
+            if summary_metadata_path.exists():
+                summary_metadata = json.loads(summary_metadata_path.read_text())
+                summary_metadata["chain"]["last_round_id"] = next_round
+                summary_metadata_path.write_text(json.dumps(summary_metadata, indent=2))
+        except Exception as e:
+            print(f"[summary] Warning: Could not update summary with round ID: {e}")
 
     except Exception as e:
         print(f"[on-chain ERROR] {e}")

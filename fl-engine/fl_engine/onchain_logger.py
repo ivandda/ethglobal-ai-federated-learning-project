@@ -67,6 +67,7 @@ class OnchainFLLogger:
         round_id: int = None,  # If None, will use next sequential ID
         model_hash: bytes = None,
         artifact_cid: str = None,
+        summary_cid: str = None,  # Summary data root for LLM queries
         client_addresses: List[str] = None,
         samples: List[int] = None,
         scores: List[int] = None,
@@ -80,6 +81,8 @@ class OnchainFLLogger:
             raise ValueError("model_hash is required")
         if artifact_cid is None or len(artifact_cid) == 0:
             raise ValueError("artifact_cid is required and cannot be empty")
+        if summary_cid is None:
+            summary_cid = ""  # Optional, can be empty string
         if client_addresses is None:
             client_addresses = []
         if samples is None:
@@ -110,6 +113,7 @@ class OnchainFLLogger:
             round_id,
             model_hash,
             artifact_cid,
+            summary_cid,
             checksum_addresses,
             samples,
             scores,

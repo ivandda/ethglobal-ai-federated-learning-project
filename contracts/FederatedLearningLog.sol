@@ -20,7 +20,8 @@ contract FederatedLearningLog {
     /// @notice High-level record for each training round.
     struct RoundInfo {
         bytes32 modelHash;        // Hash of global model weights (e.g., sha256)
-        string artifactCid;       // Filecoin/IPFS CID of the artifact bundle
+        string artifactCid;       // Filecoin/IPFS CID of the artifact bundle (model file)
+        string summaryCid;         // Filecoin/IPFS CID of the summary data (for LLM queries)
         address[] clients;        // Participating client wallet addresses
         uint256 timestamp;        // Block timestamp of the round
     }
@@ -52,6 +53,7 @@ contract FederatedLearningLog {
         uint256 indexed roundId,
         bytes32 modelHash,
         string artifactCid,
+        string summaryCid,
         address[] clients,
         uint256 timestamp
     );
@@ -110,7 +112,8 @@ contract FederatedLearningLog {
      * @notice Records a completed Federated Learning round.
      * @param roundId         The ID of the round (must be sequential)
      * @param modelHash       Hash of the global model weights
-     * @param artifactCid     Filecoin/IPFS CID of the artifact bundle
+     * @param artifactCid     Filecoin/IPFS CID of the artifact bundle (model file)
+     * @param summaryCid      Filecoin/IPFS CID of the summary data (for LLM queries)
      * @param clients         Participating client wallet addresses
      * @param samples         Per-client sample counts
      * @param scores          Per-client contribution scores
@@ -119,6 +122,7 @@ contract FederatedLearningLog {
         uint256 roundId,
         bytes32 modelHash,
         string calldata artifactCid,
+        string calldata summaryCid,
         address[] calldata clients,
         uint256[] calldata samples,
         uint256[] calldata scores
@@ -131,6 +135,7 @@ contract FederatedLearningLog {
         );
         require(clients.length > 0, "No clients provided");
         require(bytes(artifactCid).length > 0, "Empty artifact CID");
+        // summaryCid is optional (can be empty string if not available)
 
         // Validate clients and check for duplicates
         for (uint256 i = 0; i < clients.length; i++) {
@@ -145,6 +150,7 @@ contract FederatedLearningLog {
         RoundInfo storage r = rounds[roundId];
         r.modelHash = modelHash;
         r.artifactCid = artifactCid;
+        r.summaryCid = summaryCid;
         r.timestamp = block.timestamp;
 
         // Store per-client contribution info
@@ -166,6 +172,7 @@ contract FederatedLearningLog {
             roundId,
             modelHash,
             artifactCid,
+            summaryCid,
             clients,
             block.timestamp
         );
