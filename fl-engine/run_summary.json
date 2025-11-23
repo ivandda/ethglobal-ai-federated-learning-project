@@ -1,5 +1,5 @@
 {
-  "timestamp": 1763855986,
+  "timestamp": 1763862518,
   "num_server_rounds": 3,
   "dataset": {
     "name": "CIFAR-10",
@@ -49,54 +49,54 @@
   },
   "global_metrics": {
     "accuracy_improvement": {
-      "initial_accuracy": 0.09430000000000002,
-      "final_accuracy": 0.2533,
-      "absolute_improvement": 0.159,
-      "relative_improvement_pct": 168.61081654294802
+      "initial_accuracy": 0.10289999999999999,
+      "final_accuracy": 0.25730000000000003,
+      "absolute_improvement": 0.15440000000000004,
+      "relative_improvement_pct": 150.04859086491743
     },
     "loss_reduction": {
-      "initial_loss": 2.143239143180847,
-      "final_loss": 1.975244823074341,
-      "absolute_reduction": 0.16799432010650617,
-      "relative_reduction_pct": 7.8383376227993224
+      "initial_loss": 2.187581900405884,
+      "final_loss": 1.962148098754883,
+      "absolute_reduction": 0.2254338016510009,
+      "relative_reduction_pct": 10.30515939125177
     }
   },
   "rounds": [
     {
       "round": 1,
       "metrics": {
-        "train_loss": 2.143239143180847,
-        "eval_loss": 2.288993002474308,
-        "eval_acc": 0.09430000000000002
+        "train_loss": 2.187581900405884,
+        "eval_loss": 2.31455477103591,
+        "eval_acc": 0.10289999999999999
       }
     },
     {
       "round": 2,
       "metrics": {
-        "train_loss": 2.0656829612731937,
-        "eval_loss": 2.0352763503789904,
-        "eval_acc": 0.21599999999999997
+        "train_loss": 2.1307561563491824,
+        "eval_loss": 2.218404210358858,
+        "eval_acc": 0.16509999999999997
       }
     },
     {
       "round": 3,
       "metrics": {
-        "train_loss": 1.975244823074341,
-        "eval_loss": 1.9083243232220413,
-        "eval_acc": 0.2533
+        "train_loss": 1.962148098754883,
+        "eval_loss": 1.9108673725277185,
+        "eval_acc": 0.25730000000000003
       }
     }
   ],
   "storage": {
     "backend": "0g",
-    "zero_g_root": "0xa6590d6a591649e0e876df6d5e0b6eeac5fa56170b8c9fe148dd17582c6f32fb",
+    "zero_g_root": "0x6ee319f815cd01864e20e4319c0306fcc58f8a7b0304f956719ad5042bb611e0",
     "zero_g_indexer": "https://indexer-storage-testnet-turbo.0g.ai/"
   },
   "chain": {
     "rpc_url": "https://evmrpc-testnet.0g.ai",
     "contract_address": "0xfcE4B485F99886295e9aDfFA07A07C230bfffdAC",
-    "last_round_id": 2
+    "last_round_id": 3
   },
-  "summary_data_root": "0x3a33f2b5597f40e6a0cd3e0e7acc9d21d031745abf067e065968a11584fc6e15",
+  "summary_data_root": "0x4755b2fd88e23792f767b5820e143c30781a413f5c4ba5f776333581c5b13835",
   "summary_data_filename": "run_summary_data.json"
 }
